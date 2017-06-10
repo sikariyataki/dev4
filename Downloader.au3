@@ -118,7 +118,7 @@ EndFunc
 
 Func UpdateINIFile()
    Local $sFilePath = _WinAPI_GetTempFileName(@TempDir)
-   Local $hDownload = InetGet("https://dev4.pinoydev.org/config.ini", $sFilePath, $INET_FORCERELOAD, $INET_DOWNLOADBACKGROUND)
+   Local $hDownload = InetGet("https://dev4.pinoydev.org/lib/config.ini", $sFilePath, $INET_FORCERELOAD, $INET_DOWNLOADBACKGROUND)
    Do
 	 Sleep(250)
    Until InetGetInfo($hDownload, $INET_DOWNLOADCOMPLETE)
@@ -130,7 +130,7 @@ EndFunc
 
 Func FFMPEG()
    Local $sFilePath = _WinAPI_GetTempFileName(@TempDir)
-   Local $hDownload = InetGet("https://dev4.pinoydev.org/ffmpeg.exe", $sFilePath, $INET_FORCERELOAD, $INET_DOWNLOADBACKGROUND)
+   Local $hDownload = InetGet("https://dev4.pinoydev.org/lib/ffmpeg.exe", $sFilePath, $INET_FORCERELOAD, $INET_DOWNLOADBACKGROUND)
    Do
 	 Sleep(250)
    Until InetGetInfo($hDownload, $INET_DOWNLOADCOMPLETE)
