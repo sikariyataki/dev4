@@ -102,6 +102,8 @@ Func Download()
 		 Local $DownloadedFile = $FileName & $cDate
 		 Call("DownloadSelector", $DownloadURL, $DownloadedFile)
 	 Next
+	Else
+  		MsgBox($MB_SYSTEMMODAL, "Error", "You need to download the INI file.")
    EndIf
 EndFunc
 
