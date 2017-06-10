@@ -50,11 +50,11 @@ Func WinStart()
    Local $Button1 = GUICtrlCreateButton("Download", 510, 50, 70, 30)
    Local $Button2 = GUICtrlCreateButton("Update INI File", 20, 260, 100, 30)
    Local $Button3 = GUICtrlCreateButton("Download FFMPEG", 125, 260, 120, 30)
-   Local $Combo1 = GUICtrlCreateCombo("2500000",  250, 262, 100, 30)
-   GUICtrlSetData($Combo1, "2500000|1500000|1300000|1000000|800000|500000|300000|150000")
+   Local $Combo1 = GUICtrlCreateCombo("",  250, 262, 100, 30)
+   GUICtrlSetData($Combo1, "2500000|1500000|1300000|1000000|800000|500000|300000|150000","2500000")
    GUICtrlSetFont($Combo1, 12)
-   Local $Combo2 = GUICtrlCreateCombo("-hd-",  360, 262, 70, 30)
-   GUICtrlSetData($Combo2, "-|-sd-|-hd-")
+   Local $Combo2 = GUICtrlCreateCombo("",  360, 262, 70, 30)
+   GUICtrlSetData($Combo2, "-|-sd-|-hd-","-hd-")
    GUICtrlSetFont($Combo2, 12)
    Local $Group1 = GUICtrlCreateGroup("Download Logs", 20, 90, 560, 160)
    GUICtrlSetFont($Group1, 10)
@@ -67,6 +67,7 @@ Func WinStart()
 		 Case $UIEvent = $GUI_EVENT_CLOSE
 			ExitLoop
 		 Case $UIEvent = $Button1
+			GUICtrlSetData($Edit1,"")
 			Download(GUICtrlRead($TextBox1), GUICtrlRead($Combo1), GUICtrlRead($Combo2) )
 		 Case $UIEvent = $Button2
 			UpdateINIFile()
@@ -84,16 +85,16 @@ Func DownloadSelector($DownloadPath, $Filename, $AccessParam, $BitRate, $Res)
    Local $FileExt  = ",.mp4.csmil/master.m3u8?"
 
    Call("LogDisplay", "Downloading: " & $Filename & @CRLF)
-
+   Local $FilenameExt = $Filename & ".mp4"
    Local $DownloadURL = $DownloadPath & $Res &  "," & $BitRate & $FileExt & $AccessParam
-   Local $DownloadFile = " -c copy -bsf:a aac_adtstoasc " & '"' & $Filename & ".mp4" '"' &
+   Local $DownloadFile = " -c copy -bsf:a aac_adtstoasc " & '"' & $FilenameExt & '"'
    Local $DownloadConvert = '"' & $DownloadURL & '"' & $DownloadFile
-   If Not FileExists(@ScriptDir & "\" & $Filename) Then
+   If Not FileExists(@ScriptDir & "\" & $FilenameExt) Then
 	  ;ConsoleWrite(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert & @CRLF)
 	  RunWait(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert, "", @SW_HIDE)
    EndIf
-   If FileExists(@ScriptDir & "\" & $Filename) Then
-	  Call("LogDisplay", "Downloaded: " & $Filename)
+   If FileExists(@ScriptDir & "\" & $FilenameExt) Then
+	  Call("LogDisplay", "Downloaded: " & $Filename & @CRLF)
    EndIf
 EndFunc
 
