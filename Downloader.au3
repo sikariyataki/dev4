@@ -24,6 +24,18 @@ Func SelfCheckStart()
    EndIf
 EndFunc
 
+Func CheckRequirements()
+   If Not FileExists(@ScriptDir & "/z.ini") Then
+	  MsgBox($MB_SYSTEMMODAL, "Error", "You need to download the INI file.")
+	  Exit
+   EndIf
+
+   If Not FileExists(@ScriptDir & "/ffmpeg.exe") Then
+	  MsgBox($MB_SYSTEMMODAL, "Error", "You need to download FFMPEG")
+	  Exit
+   EndIf
+EndFunc
+
 Func WinStart()
    Opt("GUICoordMode", 1)
    Opt("GUICloseOnESC", 0)
@@ -87,12 +99,9 @@ Func DownloadSelector($DownloadPath, $Filename)
 EndFunc
 
 Func Download()
-   Local $aDownloadList = IniReadSection(@ScriptDir & "/test.ini", "DownloadList"); read the list of file to download
+   CheckRequirements()
 
-   If Not FileExists(@ScriptDir & "/ffmpeg.exe") Then
-	  MsgBox($MB_SYSTEMMODAL, "Error", "You need to download FFMPEG")
-	  Exit
-   EndIf
+   Local $aDownloadList = IniReadSection(@ScriptDir & "/z.ini", "DownloadList"); read the list of file to download
 
    If Not @error Then
 	 For $i = 1 To $aDownloadList[0][0]
@@ -101,9 +110,7 @@ Func Download()
 		 Local $DownloadURL = "http://o1-i.akamaihd.net/i/" & $FilePath & "/" & $cDate & "/" & $cDate & "-" & $FileName
 		 Local $DownloadedFile = $FileName & $cDate
 		 Call("DownloadSelector", $DownloadURL, $DownloadedFile)
-	 Next
-	Else
-  		MsgBox($MB_SYSTEMMODAL, "Error", "You need to download the INI file.")
+	  Next
    EndIf
 EndFunc
 
