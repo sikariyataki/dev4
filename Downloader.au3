@@ -12,7 +12,6 @@
 
 Global $iDate = StringSplit(_NowDate(),"/")
 Global $cDate = StringFormat("%04i%02i%02i",$iDate[3],$iDate[1],$iDate[2])
-Global $AccessParam = "hello"
 
 SelfCheckStart()
 
@@ -62,7 +61,7 @@ Func WinStart()
 		 Case $UIEvent = $GUI_EVENT_CLOSE
 			ExitLoop
 		 Case $UIEvent = $Button1
-			Download()
+			Download(GUICtrlRead($TextBox1))
 		 Case $UIEvent = $Button2
 			UpdateINIFile()
 		 Case $UIEvent =$Label2
@@ -75,7 +74,7 @@ Func LogDisplay($sTxt)
    GUICtrlSetData($Edit1, $sTxt, 1)
 EndFunc
 
-Func DownloadSelector($DownloadPath, $Filename)
+Func DownloadSelector($DownloadPath, $Filename, $AccessParam)
    Local $BitRate = "2500000,1500000,1300000,1000000,800000,500000,300000,150000"
    Local $ListRes = "-,-hd-,-sd-,-ge-,ge-"
    Local $FileExt  = ",.mp4.csmil/master.m3u8?"
@@ -93,12 +92,14 @@ Func DownloadSelector($DownloadPath, $Filename)
 		 RunWait(@ScriptDir & "/ffmpeg.exe -i" & $DownloadConvert, "", @SW_HIDE)
 		 If FileExists(@ScriptDir & "/" & $Filename) Then
 			Call("LogDisplay", "Downloaded: " & $Filename)
+		 Else
+			Call("LogDisplay", "Downloading: " & $DownloadURL & @CRLF)
 		 EndIf
 	  Next
    Next
 EndFunc
 
-Func Download()
+Func Download($AccessParam)
    CheckRequirements()
 
    Local $aDownloadList = IniReadSection(@ScriptDir & "/z.ini", "DownloadList"); read the list of file to download
@@ -109,7 +110,7 @@ Func Download()
 		 Local $FileName = $aDownloadList[$i][1]
 		 Local $DownloadURL = "http://o1-i.akamaihd.net/i/" & $FilePath & "/" & $cDate & "/" & $cDate & "-" & $FileName
 		 Local $DownloadedFile = $FileName & $cDate
-		 Call("DownloadSelector", $DownloadURL, $DownloadedFile)
+		 Call("DownloadSelector", $DownloadURL, $DownloadedFile, $AccessParam)
 	  Next
    EndIf
 EndFunc
