@@ -12,7 +12,6 @@
 
 Global $iDate = StringSplit(_NowDate(),"/")
 Global $cDate = StringFormat("%04i%02i%02i",$iDate[3],$iDate[1],$iDate[2])
-Global $BitRate = "1500000"
 
 SelfCheckStart()
 
