@@ -84,16 +84,18 @@ Func DownloadSelector($DownloadPath, $Filename, $AccessParam)
 
    Local $reBitRate = 0
 
+
+   Call("LogDisplay", "Downloading: " & $Filename & @CRLF)
+
    For $i=1 To $aBitRate[0]
 	  For $j=1 To $aListRes[0]
-		 Local $DownloadURL = $DownloadPath & $aListRes[$j] & $aBitRate[$i] & $FileExt & $AccessParam
+		 Local $DownloadURL = $DownloadPath & $aListRes[$j] &  "," & $aBitRate[$i] & $FileExt & $AccessParam
 		 Local $DownloadFile = " -c copy -bsf:a aac_adtstoasc " & $Filename & ".mp4"
-		 Local $DownloadConvert = $DownloadURL & $DownloadFile
+		 Local $DownloadConvert = '"' & $DownloadURL & '"' & $DownloadFile
 		 RunWait(@ScriptDir & "/ffmpeg.exe -i" & $DownloadConvert, "", @SW_HIDE)
+		 ConsoleWrite($DownloadConvert & @CRLF)
 		 If FileExists(@ScriptDir & "/" & $Filename) Then
 			Call("LogDisplay", "Downloaded: " & $Filename)
-		 Else
-			Call("LogDisplay", "Downloading: " & $DownloadURL & @CRLF)
 		 EndIf
 	  Next
    Next
