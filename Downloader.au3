@@ -12,6 +12,7 @@
 
 Global $iDate = StringSplit(_NowDate(),"/")
 Global $cDate = StringFormat("%04i%02i%02i",$iDate[3],$iDate[1],$iDate[2])
+Global $BitRate = "1500000"
 
 SelfCheckStart()
 
@@ -50,6 +51,12 @@ Func WinStart()
    Local $Button1 = GUICtrlCreateButton("Download", 510, 50, 70, 30)
    Local $Button2 = GUICtrlCreateButton("Update INI File", 20, 260, 100, 30)
    Local $Button3 = GUICtrlCreateButton("Download FFMPEG", 125, 260, 120, 30)
+   Local $Combo1 = GUICtrlCreateCombo("2500000",  250, 262, 100, 30)
+   GUICtrlSetData($Combo1, "2500000|1500000|1300000|1000000|800000|500000|300000|150000")
+   GUICtrlSetFont($Combo1, 12)
+   Local $Combo2 = GUICtrlCreateCombo("-hd-",  360, 262, 70, 30)
+   GUICtrlSetData($Combo2, "-|-sd-|-hd-")
+   GUICtrlSetFont($Combo2, 12)
    Local $Group1 = GUICtrlCreateGroup("Download Logs", 20, 90, 560, 160)
    GUICtrlSetFont($Group1, 10)
    GUIStartGroup()
@@ -61,7 +68,7 @@ Func WinStart()
 		 Case $UIEvent = $GUI_EVENT_CLOSE
 			ExitLoop
 		 Case $UIEvent = $Button1
-			Download(GUICtrlRead($TextBox1))
+			Download(GUICtrlRead($TextBox1), GUICtrlRead($Combo1), GUICtrlRead($Combo2) )
 		 Case $UIEvent = $Button2
 			UpdateINIFile()
 		 Case $UIEvent =$Label2
@@ -74,37 +81,27 @@ Func LogDisplay($sTxt)
    GUICtrlSetData($Edit1, $sTxt, 1)
 EndFunc
 
-Func DownloadSelector($DownloadPath, $Filename, $AccessParam)
-   Local $BitRate = "2500000,1500000,1300000,1000000,800000,500000,300000,150000"
-   Local $ListRes = "-,-hd-,-sd-,-ge-,ge-"
+Func DownloadSelector($DownloadPath, $Filename, $AccessParam, $BitRate, $Res)
    Local $FileExt  = ",.mp4.csmil/master.m3u8?"
-
-   Local $aBitRate = StringSplit($BitRate, ",")
-   Local $aListRes = StringSplit($ListRes, ",")
-
-   Local $reBitRate = 0
-
 
    Call("LogDisplay", "Downloading: " & $Filename & @CRLF)
 
-   For $i=1 To $aBitRate[0]
-	  For $j=1 To $aListRes[0]
-		 Local $DownloadURL = $DownloadPath & $aListRes[$j] &  "," & $aBitRate[$i] & $FileExt & $AccessParam
-		 Local $DownloadFile = " -c copy -bsf:a aac_adtstoasc " & $Filename & ".mp4"
-		 Local $DownloadConvert = '"' & $DownloadURL & '"' & $DownloadFile
-		 RunWait(@ScriptDir & "/ffmpeg.exe -i" & $DownloadConvert, "", @SW_HIDE)
-		 ConsoleWrite($DownloadConvert & @CRLF)
-		 If FileExists(@ScriptDir & "/" & $Filename) Then
-			Call("LogDisplay", "Downloaded: " & $Filename)
-		 EndIf
-	  Next
-   Next
+   Local $DownloadURL = $DownloadPath & $Res &  "," & $BitRate & $FileExt & $AccessParam
+   Local $DownloadFile = " -c copy -bsf:a aac_adtstoasc " & '"' & $Filename & ".mp4" '"' &
+   Local $DownloadConvert = '"' & $DownloadURL & '"' & $DownloadFile
+   If Not FileExists(@ScriptDir & "\" & $Filename) Then
+	  ;ConsoleWrite(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert & @CRLF)
+	  RunWait(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert, "", @SW_HIDE)
+   EndIf
+   If FileExists(@ScriptDir & "\" & $Filename) Then
+	  Call("LogDisplay", "Downloaded: " & $Filename)
+   EndIf
 EndFunc
 
-Func Download($AccessParam)
+Func Download($AccessParam, $BitRate, $Res)
    CheckRequirements()
 
-   Local $aDownloadList = IniReadSection(@ScriptDir & "/z.ini", "DownloadList"); read the list of file to download
+   Local $aDownloadList = IniReadSection(@ScriptDir & "\z.ini", "DownloadList"); read the list of file to download
 
    If Not @error Then
 	 For $i = 1 To $aDownloadList[0][0]
@@ -112,7 +109,7 @@ Func Download($AccessParam)
 		 Local $FileName = $aDownloadList[$i][1]
 		 Local $DownloadURL = "http://o1-i.akamaihd.net/i/" & $FilePath & "/" & $cDate & "/" & $cDate & "-" & $FileName
 		 Local $DownloadedFile = $FileName & $cDate
-		 Call("DownloadSelector", $DownloadURL, $DownloadedFile, $AccessParam)
+		 Call("DownloadSelector", $DownloadURL, $DownloadedFile, $AccessParam, $BitRate, $Res)
 	  Next
    EndIf
 EndFunc
