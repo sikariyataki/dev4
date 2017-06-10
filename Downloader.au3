@@ -112,6 +112,7 @@ Func Download($AccessParam, $BitRate, $Res)
 		 Call("DownloadSelector", $DownloadURL, $DownloadedFile, $AccessParam, $BitRate, $Res)
 	  Next
    EndIf
+   Call("LogDisplay","Download completed!")
 EndFunc
 
 
