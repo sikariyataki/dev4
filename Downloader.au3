@@ -125,8 +125,8 @@ Func DownloadSection($DownloadURL, $sFilename, $AccessParam, $BitRate, $Res)
    Local $ffCopy = " -c copy -bsf:a aac_adtstoasc " & '"' & $Filename & '"'
    Call("ConsoleLog", "Downloading... " & $Filename & @CRLF)
    If Not FileExists(@ScriptDir & "\" & $Filename) Then
-	  ConsoleWrite(@ScriptDir & "\ffmpeg.exe -i " & $ffURL & $ffCopy & @CRLF)
-	  ;RunWait(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert, "", @SW_HIDE)
+	  ;ConsoleWrite(@ScriptDir & "\ffmpeg.exe -i " & $ffURL & $ffCopy & @CRLF)
+	  RunWait(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert, "", @SW_HIDE)
    EndIf
    If FileExists(@ScriptDir & "\" & $Filename) Then
 	  Call("ConsoleLog", "Download completed -> " & $Filename & @CRLF)
