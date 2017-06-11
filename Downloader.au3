@@ -52,9 +52,11 @@ Func WinStart()
 
    Local $aDList = DownloadList()
 
-   For $i = 1 To $aDList[0]
-	  GUICtrlSetData($sFile, $aDList[$i])
-   Next
+   If IsArray($aDList) Then
+	  For $i = 1 To $aDList[0]
+		 GUICtrlSetData($sFile, $aDList[$i])
+	  Next
+   EndIf
 
    While 1
 	  $UIEvent = GUIGetMsg()
@@ -81,12 +83,13 @@ Func cBitRate($br)
 EndFunc
 
 Func DownloadList()
-   Return IniReadSectionNames(@ScriptDir & "\download.ini")
+   If FileExists(@ScriptDir & "\download.ini") Then
+	  Return IniReadSectionNames(@ScriptDir & "\download.ini")
+   EndIf
 EndFunc
 
 Func DownloadStart($sFile, $sDate, $AccessParam, $bitRate, $res)
    If CheckRequirements() Then
-	  ; http://o2-f.akamaihd.net/z/tvt/20170611/20170611-tvt-p-hd-,150000,300000,500000,800000,1000000,1300000,1500000,2500000,.mp4.csmil/manifest.f4m
 	  $aDate = StringSplit($sDate, "/")
 	  $cDate = StringFormat("%04i%02i%02i",$aDate[3],$aDate[1],$aDate[2])
 	  $sFile = StringStripWS($sFile, $STR_STRIPLEADING + $STR_STRIPTRAILING + $STR_STRIPSPACES)
