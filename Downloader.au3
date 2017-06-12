@@ -127,7 +127,7 @@ Func DownloadSection($DownloadURL, $sFilename, $AccessParam, $BitRate, $Res)
    Call("ConsoleLog", "Downloading... " & $Filename & @CRLF)
    If Not FileExists(@ScriptDir & "\" & $Filename) Then
 	  Local $DownloadStart = _NowCalc()
-	  RunWait(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert, @SW_HIDE)
+	  RunWait(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert)
 	  If _DateDiff('s', $DownloadStart, _NowCalc()) < 10 Then
 		 Call("ConsoleLog", "Download for " & $sFilename & " is not ready." & @CRLF)
 	  EndIf
