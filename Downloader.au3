@@ -121,22 +121,20 @@ EndFunc
 
 Func DownloadSection($DownloadURL, $sFilename, $AccessParam, $BitRate, $Res)
    Local $Filename = $sFilename & $cDate & ".mp4"
-   Local $ffURL = '"' & $DownloadURL & '"'
+   Local $ffURL = '"' & $DownloadURL & $AccessParam & '"'
    Local $ffCopy = " -c copy -bsf:a aac_adtstoasc " & '"' & $Filename & '"'
+   Local $DownloadConvert = $ffURL & $ffCopy
    Call("ConsoleLog", "Downloading... " & $Filename & @CRLF)
    If Not FileExists(@ScriptDir & "\" & $Filename) Then
-	  ;ConsoleWrite(@ScriptDir & "\ffmpeg.exe -i " & $ffURL & $ffCopy & @CRLF)
 	  Local $DownloadStart = _NowCalc()
-	  RunWait(@ScriptDir & "\ffmpeg.exe -i " & $ffURL & $ffCopy, "", @SW_HIDE)
+	  RunWait(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert, @SW_HIDE)
+	  If _DateDiff('s', $DownloadStart, _NowCalc()) < 10 Then
+		 Call("ConsoleLog", "Download for " & $sFilename & " is not ready." & @CRLF)
+	  EndIf
    EndIf
    If FileExists(@ScriptDir & "\" & $Filename) Then
 	  Call("ConsoleLog", "Download completed -> " & $Filename & @CRLF)
    EndIf
-
-   If _DateDiff('s', $DownloadStart, _NowCalc()) < 10 Then
-	  Call("ConsoleLog", "Download for " & $sFilename & "is not ready." & @CRLF)
-   EndIf
-
 EndFunc
 
 Func INIFile()
