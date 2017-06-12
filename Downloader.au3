@@ -50,13 +50,7 @@ Func WinStart()
    GUICtrlSetData($iBitrate, "150000|300000|500000|800000|1000000|1300000|1500000|2500000")
    GUIStartGroup()
 
-   Local $aDList = DownloadList()
-
-   If IsArray($aDList) Then
-	  For $i = 1 To $aDList[0]
-		 GUICtrlSetData($sFile, $aDList[$i])
-	  Next
-   EndIf
+   DownloadList($sFile)
 
    While 1
 	  $UIEvent = GUIGetMsg()
@@ -67,6 +61,7 @@ Func WinStart()
 			DownloadStart(GUICtrlRead($sFile), GUICtrlRead($sDate), GUICtrlRead($TextBox1), cBitRate(GUICtrlRead($iBitrate)), GUICtrlRead($iResolution) )
 		 Case $UIEvent = $BtnINI
 			INIFile()
+			DownloadList($sFile)
 		 Case $UIEvent = $BtnFFMPEG
 			FFMPEG()
 		 Case $UIEvent =$Label2
@@ -82,9 +77,14 @@ Func cBitRate($br)
    Return $br
 EndFunc
 
-Func DownloadList()
+Func DownloadList($sFile)
    If FileExists(@ScriptDir & "\download.ini") Then
-	  Return IniReadSectionNames(@ScriptDir & "\download.ini")
+	  Local $aDList = IniReadSectionNames(@ScriptDir & "\download.ini")
+	  If IsArray($aDList) Then
+		 For $i = 1 To $aDList[0]
+			GUICtrlSetData($sFile, $aDList[$i])
+		 Next
+	  EndIf
    EndIf
 EndFunc
 
@@ -126,11 +126,17 @@ Func DownloadSection($DownloadURL, $sFilename, $AccessParam, $BitRate, $Res)
    Call("ConsoleLog", "Downloading... " & $Filename & @CRLF)
    If Not FileExists(@ScriptDir & "\" & $Filename) Then
 	  ;ConsoleWrite(@ScriptDir & "\ffmpeg.exe -i " & $ffURL & $ffCopy & @CRLF)
-	  RunWait(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert, "", @SW_HIDE)
+	  Local $DownloadStart = _NowCalc()
+	  RunWait(@ScriptDir & "\ffmpeg.exe -i " & $ffURL & $ffCopy, "", @SW_HIDE)
    EndIf
    If FileExists(@ScriptDir & "\" & $Filename) Then
 	  Call("ConsoleLog", "Download completed -> " & $Filename & @CRLF)
    EndIf
+
+   If _DateDiff('s', $DownloadStart, _NowCalc()) < 10 Then
+	  Call("ConsoleLog", "Download for " & $sFilename & "is not ready." & @CRLF)
+   EndIf
+
 EndFunc
 
 Func INIFile()
