@@ -9,6 +9,7 @@
 #include <String.au3>
 #include <WinAPIFiles.au3>
 #include <WindowsConstants.au3>
+#include <ButtonConstants.au3>
 
 Global $WriteLog, $CurrentVersion = 1
 Global $aDate = StringSplit(_Now(), "/")
@@ -119,21 +120,30 @@ Func DownloadStart($sFile, $sDate, $AccessParam, $bitRate, $res)
    EndIf
 EndFunc
 
-Func DownloadSection($DownloadURL, $sFilename, $AccessParam, $BitRate, $Res)
-   Local $Filename = $sFilename & $cDate & ".mp4"
-   Local $ffURL = '"' & $DownloadURL & $AccessParam & '"'
-   Local $ffCopy = " -c copy -bsf:a aac_adtstoasc " & '"' & $Filename & '"'
-   Local $DownloadConvert = $ffURL & $ffCopy
-   Call("ConsoleLog", "Downloading... " & $Filename & @CRLF)
+Func DownloadSection($DownloadPath, $sFilename, $AccessParam, $BitRate, $Res)
+   Local $Filename = $sFilename & "_" & $cDate & ".mp4"
+   Local $Filetemp = "downloading_" & $sFilename & ".mp4"
+   Local $DownloadURL = '"' & $DownloadPath & $AccessParam & '"'
+   Local $DownloadStart = @ScriptDir & "\ffmpeg.exe -i " &  $DownloadURL & " -c copy -bsf:a aac_adtstoasc " & $Filetemp
+   Local $DownloadFinal = @ScriptDir & "\ffmpeg.exe -ss 00:00:15.0 -i " & $Filetemp & " -c copy " & $Filename
    If Not FileExists(@ScriptDir & "\" & $Filename) Then
-	  Local $DownloadStart = _NowCalc()
-	  RunWait(@ScriptDir & "\ffmpeg.exe -i " & $DownloadConvert)
-	  If _DateDiff('s', $DownloadStart, _NowCalc()) < 10 Then
-		 Call("ConsoleLog", "Download for " & $sFilename & " is not ready." & @CRLF)
+	  Local $DownloadTime = _NowCalc()
+	  Call("ConsoleLog", "Download started " & $Filename & @CRLF)
+	  RunWait($DownloadStart)
+	  RunWait($DownloadFinal)
+	  FileDelete($Filetemp)
+	  ;ConsoleWrite($DownloadStart & @CRLF)
+	  ;ConsoleWrite($DownloadFinal & @CRLF)
+	  If _DateDiff('s', $DownloadTime, _NowCalc()) < 10 Then
+		 Call("ConsoleLog", "ERROR: Download failed for " & $sFilename & ". File is not ready" & @CRLF)
 	  EndIf
-   EndIf
-   If FileExists(@ScriptDir & "\" & $Filename) Then
-	  Call("ConsoleLog", "Download completed -> " & $Filename & @CRLF)
+	  If FileExists(@ScriptDir & "\" & $Filename) Then
+		 Call("ConsoleLog", "Download completed -> " & $Filename & @CRLF)
+	  EndIf
+   Else
+	  If FileExists(@ScriptDir & "\" & $Filename) Then
+		 Call("ConsoleLog", $Filename & " already exist."& @CRLF)
+	  EndIf
    EndIf
 EndFunc
 
