@@ -1,5 +1,6 @@
 #include <Array.au3>
 #include <AutoItConstants.au3>
+#include <Constants.au3>
 #include <Date.au3>
 #include <EditConstants.au3>
 #include <InetConstants.au3>
@@ -17,7 +18,6 @@ Global $cDate = StringFormat("%04i%02i%02i",$aDate[3],$aDate[1],$aDate[2])
 Global $StreamURL = "http://o1-i.akamaihd.net/i/"
 Global $StreamExt = ",.mp4.csmil/master.m3u8?"
 Global $defaultBitrate = "150000,300000,500000,800000,1000000,1300000,1500000,2500000"
-
 SelfCheckStart()
 
 Func WinStart()
@@ -32,6 +32,7 @@ Func WinStart()
    Local $BtnDownload = GUICtrlCreateButton("Download", 510, 50, 70, 30)
    Local $BtnINI = GUICtrlCreateButton("Update INI File", 20, 260, 100, 30)
    Local $BtnFFMPEG = GUICtrlCreateButton("Download FFMPEG", 125, 260, 120, 30)
+   Local $BtnGetToken = GUICtrlCreateButton("Get Access Token", 250, 260, 120, 30)
    Local $sFile = GUICtrlCreateCombo("Select file to download",  400, 100, 180, 30)
    Local $sDate = GUICtrlCreateDate("", 470, 140, 110, 30, $DTS_SHORTDATEFORMAT)
    Local $iBitrate = GUICtrlCreateCombo("default",  480, 220, 100, 30)
@@ -65,6 +66,8 @@ Func WinStart()
 			DownloadList($sFile)
 		 Case $UIEvent = $BtnFFMPEG
 			FFMPEG()
+		 Case $UIEvent = $BtnGetToken
+			GUICtrlSetData($TextBox1, getToken())
 		 Case $UIEvent =$Label2
 			ShellExecute("http://pinoydev.org")
 	  EndSelect
@@ -227,4 +230,17 @@ Func CheckVersionUpdate()
 	  Call("ConsoleLog","Version checked: A new version is available." & @CRLF)
    EndIf
    FileDelete($sFilePath)
+EndFunc
+
+Func getToken()
+   Call("ConsoleLog", "WAIT. Generated access token..." & @CRLF)
+   ;Local $pid = Run(@ComSpec & " /c ping www.google.com", "", @SW_HIDE, $STDERR_CHILD + $STDOUT_CHILD)
+   Local $pid = Run(@ScriptDir & "\dist\token.exe", "", @SW_HIDE, $STDERR_CHILD + $STDOUT_CHILD)
+			    ProcessWaitClose($pid)
+   Local $tok = StdoutRead($pid)
+   Call("ConsoleLog", "COMPLETE! Access token generated..." & @CRLF)
+   If StringInStr($tok, '&') Then
+	  $tok = StringSplit($tok, '&')[1]
+   EndIf
+   Return StringStripWS($tok, $STR_STRIPLEADING + $STR_STRIPTRAILING + $STR_STRIPSPACES)
 EndFunc
