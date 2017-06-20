@@ -11,38 +11,39 @@
 #include <WinAPIFiles.au3>
 #include <WindowsConstants.au3>
 #include <ButtonConstants.au3>
+Opt("GUICoordMode", 1)
+Opt("GUICloseOnESC", 0)
 
-Global $WriteLog, $CurrentVersion = 1
+Global $AccessToken, $WriteLog, $CurrentVersion = 1, $TokenGenTime = "2017/06/20 00:00:00"
 Global $aDate = StringSplit(_Now(), "/")
 Global $cDate = StringFormat("%04i%02i%02i",$aDate[3],$aDate[1],$aDate[2])
 Global $StreamURL = "http://o1-i.akamaihd.net/i/"
 Global $StreamExt = ",.mp4.csmil/master.m3u8?"
 Global $defaultBitrate = "150000,300000,500000,800000,1000000,1300000,1500000,2500000"
+Global $DownloadDir = @ScriptDir, $LabelDir
+
 SelfCheckStart()
 
 Func WinStart()
-   Opt("GUICoordMode", 1)
-   Opt("GUICloseOnESC", 0)
    $GUI = GUICreate("TFC.tv Downloader", 600, 300)
-   GUISetState(@SW_SHOW)
 
-   Local $Label1 = GUICtrlCreateLabel("Paste TFC.tv access parameter below:", 20, 20, 480, 20)
-   Local $Label2 = GUICtrlCreateLabel("PinoyDev.org", 500, 265, 80, 20, 0x0002)
-   Local $TextBox1 = GUICtrlCreateInput("", 20, 50, 480, 30 )
-   Local $BtnDownload = GUICtrlCreateButton("Download", 510, 50, 70, 30)
-   Local $BtnINI = GUICtrlCreateButton("Update INI File", 20, 260, 100, 30)
-   Local $BtnFFMPEG = GUICtrlCreateButton("Download FFMPEG", 125, 260, 120, 30)
-   Local $BtnGetToken = GUICtrlCreateButton("Get Access Token", 250, 260, 120, 30)
+
+   Local $Credits = GUICtrlCreateLabel("PinoyDev.org", 500, 265, 80, 20, 0x0002)
+   Local $BtnDownload = GUICtrlCreateButton("Download", 400, 50, 180, 30)
+   Local $BtnINI = GUICtrlCreateButton("Download INI File", 20, 220, 100, 30)
+   Local $BtnFFMPEG = GUICtrlCreateButton("Download FFMPEG", 125, 220, 120, 30)
+   Local $BtnGetToken = GUICtrlCreateButton("Set Token Manually", 250, 220, 140, 30)
    Local $sFile = GUICtrlCreateCombo("Select file to download",  400, 100, 180, 30)
    Local $sDate = GUICtrlCreateDate("", 470, 140, 110, 30, $DTS_SHORTDATEFORMAT)
    Local $iBitrate = GUICtrlCreateCombo("default",  480, 220, 100, 30)
    Local $iResolution = GUICtrlCreateCombo("",  510, 180, 70, 30)
-   Local $LogContainer = GUICtrlCreateGroup("Download Logs", 20, 90, 370, 160)
-		 $WriteLog = GUICtrlCreateEdit("", 25, 110, 360, 135)
+   Local $LogContainer = GUICtrlCreateGroup("ConsoleLog", 20, 40, 370, 160)
+		 $WriteLog = GUICtrlCreateEdit("", 25, 60, 360, 135)
+		 $LabelDir = GUICtrlCreateLabel("Download Location: " & $DownloadDir, 20, 265, 480, 20)
 
-   GUICtrlSetFont($Label1, 14)
-   GUICtrlSetFont($Label2, 9)
-   GUICtrlSetFont($TextBox1, 12)
+   GUICtrlSetFont($Credits, 9)
+   GUICtrlSetFont($LabelDir, 10)
+   GUICtrlSetColor($LabelDir, 0xCC0000)
    GUICtrlSetFont($LogContainer, 10)
    GUICtrlSetFont($sFile, 10)
    GUICtrlSetFont($sDate, 12)
@@ -54,24 +55,28 @@ Func WinStart()
 
    DownloadList($sFile)
 
+   GUISetState(@SW_SHOW)
    While 1
 	  $UIEvent = GUIGetMsg()
 	  Select
 		 Case $UIEvent = $GUI_EVENT_CLOSE
 			ExitLoop
 		 Case $UIEvent = $BtnDownload
-			DownloadStart(GUICtrlRead($sFile), GUICtrlRead($sDate), GUICtrlRead($TextBox1), cBitRate(GUICtrlRead($iBitrate)), GUICtrlRead($iResolution) )
+			DownloadStart(GUICtrlRead($sFile), GUICtrlRead($sDate), cBitRate(GUICtrlRead($iBitrate)), GUICtrlRead($iResolution) )
 		 Case $UIEvent = $BtnINI
 			INIFile()
 			DownloadList($sFile)
 		 Case $UIEvent = $BtnFFMPEG
 			FFMPEG()
 		 Case $UIEvent = $BtnGetToken
-			GUICtrlSetData($TextBox1, getToken())
-		 Case $UIEvent =$Label2
+			EnterAccessToken()
+		 Case $UIEvent = $LabelDir
+			SetDownloadDir()
+		 Case $UIEvent =$Credits
 			ShellExecute("http://pinoydev.org")
 	  EndSelect
    WEnd
+   GUIDelete()
 EndFunc
 
 Func cBitRate($br)
@@ -92,7 +97,7 @@ Func DownloadList($sFile)
    EndIf
 EndFunc
 
-Func DownloadStart($sFile, $sDate, $AccessParam, $bitRate, $res)
+Func DownloadStart($sFile, $sDate, $bitRate, $res)
    If CheckRequirements() Then
 	  $aDate = StringSplit($sDate, "/")
 	  $cDate = StringFormat("%04i%02i%02i",$aDate[3],$aDate[1],$aDate[2])
@@ -118,18 +123,18 @@ Func DownloadStart($sFile, $sDate, $AccessParam, $bitRate, $res)
 
 		 Local $DownloadURL = $StreamURL & $_path & $StreamDate & "-" & $_file & $res & "," & $bitRate & $StreamExt
 
-		 Call("DownloadSection", $DownloadURL, $sFile, $AccessParam, $bitRate, $res)
+		 Call("DownloadSection", $DownloadURL, $sFile, $bitRate, $res)
 	  EndIf
    EndIf
 EndFunc
 
-Func DownloadSection($DownloadPath, $sFilename, $AccessParam, $BitRate, $Res)
+Func DownloadSection($FileURL, $sFilename, $BitRate, $Res)
    Local $Filename = $sFilename & "_" & $cDate & ".mp4"
-   Local $Filetemp = "downloading_" & $sFilename & ".mp4"
-   Local $DownloadURL = '"' & $DownloadPath & $AccessParam & '"'
-   Local $DownloadStart = @ScriptDir & "\ffmpeg.exe -i " &  $DownloadURL & " -c copy -bsf:a aac_adtstoasc " & $Filetemp
-   Local $DownloadFinal = @ScriptDir & "\ffmpeg.exe -ss 00:00:15.0 -i " & $Filetemp & " -c copy " & $Filename
-   If Not FileExists(@ScriptDir & "\" & $Filename) Then
+   If Not FileExists($DownloadDir & "\" & $Filename) Then
+	  Local $Filetemp = $DownloadDir & "\downloading_" & $sFilename & '.mp4'
+	  Local $DownloadURL = '"' & $FileURL & GetAccessToken() & '"'
+	  Local $DownloadStart = @ScriptDir & "\ffmpeg.exe -i " &  $DownloadURL & " -c copy -bsf:a aac_adtstoasc " & '"' & $Filetemp & '"'
+	  Local $DownloadFinal = @ScriptDir & "\ffmpeg.exe -ss 00:00:15.0 -i " & '"' & $Filetemp & '"' & " -c copy " & '"' & $DownloadDir & "\" & $Filename & '"'
 	  Local $DownloadTime = _NowCalc()
 	  Call("ConsoleLog", "Download started " & $Filename & @CRLF)
 	  RunWait($DownloadStart)
@@ -140,17 +145,18 @@ Func DownloadSection($DownloadPath, $sFilename, $AccessParam, $BitRate, $Res)
 	  If _DateDiff('s', $DownloadTime, _NowCalc()) < 10 Then
 		 Call("ConsoleLog", "ERROR: Download failed for " & $sFilename & ". File is not ready" & @CRLF)
 	  EndIf
-	  If FileExists(@ScriptDir & "\" & $Filename) Then
+	  If FileExists($DownloadDir & "\" & $Filename) Then
 		 Call("ConsoleLog", "Download completed -> " & $Filename & @CRLF)
 	  EndIf
    Else
-	  If FileExists(@ScriptDir & "\" & $Filename) Then
+	  If FileExists($DownloadDir & "\" & $Filename) Then
 		 Call("ConsoleLog", $Filename & " already exist."& @CRLF)
 	  EndIf
    EndIf
 EndFunc
 
 Func INIFile()
+   Call("ConsoleLog","DOWNLOADING INI FILE... Please wait a few moment..." & @CRLF)
    Local $sFilePath = _WinAPI_GetTempFileName(@TempDir)
    Local $hDownload = InetGet("https://dev4.pinoydev.org/download/download.ini", $sFilePath, $INET_FORCERELOAD, $INET_DOWNLOADBACKGROUND)
    Do
@@ -159,7 +165,7 @@ Func INIFile()
    InetClose($hDownload)
    FileCopy($sFilePath, @ScriptDir &"\download.ini", $FC_OVERWRITE + $FC_CREATEPATH)
    FileDelete($sFilePath)
-   Call("ConsoleLog","INI Download completed." & @CRLF)
+   Call("ConsoleLog","COMPLETED: INI file is ready." & @CRLF)
 EndFunc
 
 Func FFMPEG()
@@ -232,15 +238,39 @@ Func CheckVersionUpdate()
    FileDelete($sFilePath)
 EndFunc
 
-Func getToken()
-   Call("ConsoleLog", "WAIT. Generated access token..." & @CRLF)
-   ;Local $pid = Run(@ComSpec & " /c ping www.google.com", "", @SW_HIDE, $STDERR_CHILD + $STDOUT_CHILD)
-   Local $pid = Run(@ScriptDir & "\dist\token.exe", "", @SW_HIDE, $STDERR_CHILD + $STDOUT_CHILD)
-			    ProcessWaitClose($pid)
-   Local $tok = StdoutRead($pid)
-   Call("ConsoleLog", "COMPLETE! Access token generated..." & @CRLF)
-   If StringInStr($tok, '&') Then
-	  $tok = StringSplit($tok, '&')[1]
+Func GetAccessToken()
+   Local $TokenFile = @ScriptDir & "\dist\token.exe"
+   If FileExists($TokenFile) Then
+	  If _DateDiff('s', $TokenGenTime, _NowCalc()) > 300 Then
+		 $TokenGenTime = _NowCalc()
+		 Call("ConsoleLog", "Please wait... Generating access token..." & @CRLF)
+		 ;Local $pid = Run(@ComSpec & " /c ping www.google.com", "", @SW_HIDE, $STDERR_CHILD + $STDOUT_CHILD)
+		 Local $pid = Run($TokenFile, "", @SW_HIDE, $STDERR_CHILD + $STDOUT_CHILD)
+					  ProcessWaitClose($pid)
+		 Local $tok = StdoutRead($pid)
+		 Call("ConsoleLog", "SUCCESS! Access token generated." & @CRLF)
+		 If StringInStr($tok, '&') Then
+			$tok = StringSplit($tok, '&')[1]
+		 EndIf
+		 $AccessToken = StringStripWS($tok, $STR_STRIPLEADING + $STR_STRIPTRAILING + $STR_STRIPSPACES)
+	  EndIf
+   Else
+	  Call("ConsoleLog", "ERROR: Could not generate token. Please set token manually." & @CRLF)
    EndIf
-   Return StringStripWS($tok, $STR_STRIPLEADING + $STR_STRIPTRAILING + $STR_STRIPSPACES)
+
+   Return $AccessToken
+EndFunc
+
+Func EnterAccessToken()
+   $AccessToken = InputBox("Enter Access Token","You can manually enter access token here in case it generates bad token.")
+EndFunc
+
+Func SetDownloadDir()
+   $sFileSelectFolder = FileSelectFolder("Select folder","")
+   If @error Then
+	  Call("ConsoleLog", "No folder selected." & @CRLF)
+   Else
+	  $DownloadDir = $sFileSelectFolder
+   EndIf
+   GUICtrlSetData($LabelDir, "Download Location: " & $DownloadDir)
 EndFunc
